@@ -104,7 +104,7 @@ public class Skeleton<T> {
         for (Method mthd : mthds) {
             Class[] exceptions = mthd.getExceptionTypes();
             if (!(Arrays.asList(exceptions).contains(RMIException.class)) || !(c.isInterface())) {
-                throw new Error("C does not represent a remote interface");
+                throw new Error("Class does not represent a remote interface");
             }
         }
         // creates skeleton

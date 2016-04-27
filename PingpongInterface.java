@@ -1,5 +1,7 @@
-import rmi.*;
+import java.io.Serializable;
 
-public interface PingpongInterface {
-	public String ping(int id) throws RMIException;
+import rmi.RMIException;
+
+public interface PingpongInterface extends Serializable{
+	public String pingpong(String ping, int num) throws RMIException;
 }

@@ -2,6 +2,7 @@ package rmi;
 
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -10,7 +11,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.lang.reflect.Proxy;
 
-public class ClientHandler<T> implements InvocationHandler{
+public class ClientHandler<T> implements InvocationHandler, Serializable{
 	private InetSocketAddress address;
 	private Class<T> c;
 	public ClientHandler(InetSocketAddress address, Class<T> c){
@@ -62,8 +63,12 @@ public class ClientHandler<T> implements InvocationHandler{
 		}catch(Exception e){
 			throw new RMIException("error happened when establishing connections and transmitting methods");
 		}
-		
-		Object ret = in.readObject();
+		Object ret = null;
+		try{
+			ret = in.readObject();
+		}catch(Exception e){
+			throw new RMIException("errordasda:" + method.getName());
+		}
 		if(ret instanceof InvocationTargetException){
 			throw ((InvocationTargetException) ret).getTargetException();
 		}
