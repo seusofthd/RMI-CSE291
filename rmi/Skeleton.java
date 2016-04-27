@@ -251,7 +251,7 @@ public class Skeleton<T> {
 				try{
 					clientSockHandler = serverSocket.accept();
 //					System.out.println("Skeleton accept one client connection:"+  clientSockHandler.getRemoteSocketAddress().toString() + ":" + clientSockHandler.getPort());
-					ServerHandler serverHandler = new ServerHandler(clientSockHandler, server);
+					CommunicationThread serverHandler = new CommunicationThread(clientSockHandler);
 					serverHandler.start();
 				}catch(IOException e){
 //					System.out.println("***asdaexception");
@@ -305,8 +305,8 @@ public class Skeleton<T> {
     	private Socket clientSocket;
     	private Thread thread;
     	
-    	public CommunicationThread(Socket cSocketHandler){
-    		this.clientSocket = cSocketHandler;
+    	public CommunicationThread(Socket socketHandler){
+    		this.clientSocket = socketHandler;
     	}
     	
 		@Override

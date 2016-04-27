@@ -11,13 +11,15 @@ public class ClientTest {
 		InetSocketAddress address = new InetSocketAddress("localhost", 12333);
 		FactoryInterface factory = Stub.create(FactoryInterface.class, address);
 		try{
-			PingpongInterface ping_rmi = factory.makePingpongTest(port);
+			PingpongInterface ping_rmi = factory.pingpongTest(port);
 			String result = "";
 			for(int i = 0; i < 4; i++){
 				result = ping_rmi.pingpong("ping", i);
 				if(result != null) System.out.println(result);
 				else System.out.println("input wrong");
 			}
+			
+			factory.closePingpongTest(port);
 		}catch(Exception e){
 			e.printStackTrace();
 		}

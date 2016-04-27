@@ -64,11 +64,8 @@ public class ClientHandler<T> implements InvocationHandler, Serializable{
 			throw new RMIException("error happened when establishing connections and transmitting methods");
 		}
 		Object ret = null;
-		try{
-			ret = in.readObject();
-		}catch(Exception e){
-			throw new RMIException("errordasda:" + method.getName());
-		}
+		ret = in.readObject();
+
 		if(ret instanceof InvocationTargetException){
 			throw ((InvocationTargetException) ret).getTargetException();
 		}
