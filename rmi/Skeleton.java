@@ -13,6 +13,7 @@ import java.net.SocketException;
 import java.util.Arrays;
 
 
+
 /**
  * RMI skeleton
  * 
@@ -33,7 +34,7 @@ import java.util.Arrays;
  * <code>service_error</code>.
  */
 public class Skeleton<T> {
-    private Class<T> sclass = null;
+    private Class<T> myInterface = null;
     private T server = null;
     private InetSocketAddress sockAddr;
     private ListenThread listenThread;
@@ -66,13 +67,13 @@ public class Skeleton<T> {
         for (Method mthd : mthds) {
             Class[] exceptions = mthd.getExceptionTypes();
             if (!(Arrays.asList(exceptions).contains(RMIException.class)) || !(c.isInterface())) {
-                throw new Error("C does not represent a remote interface");
+                throw new Error("Class does not represent a remote interface");
             }
         }
         // creates skeleton
-        sclass = c;
+        myInterface = c;
         this.server = server;
-        sockAddr = new InetSocketAddress(12345);
+        sockAddr = null;
     }
 
     /**
@@ -108,7 +109,7 @@ public class Skeleton<T> {
             }
         }
         // creates skeleton
-        sclass = c;
+        myInterface = c;
         this.server = server;
         sockAddr = address;
     }
@@ -163,9 +164,6 @@ public class Skeleton<T> {
      *            The exception that occurred.
      */
     protected void service_error(RMIException exception) {
-        if (!exception.getClass().equals(EOFException.class)) {
-            exception.printStackTrace();
-        }
     }
 
     /**
@@ -182,11 +180,12 @@ public class Skeleton<T> {
      */
     public synchronized void start() throws RMIException {
         // check for conditions to throw RMIException
-        if ((listenThread != null) && listenThread.thread.isAlive()) {
+    	if(sockAddr == null) sockAddr = new InetSocketAddress(12345);
+        if (  ((listenThread != null) && listenThread.getThread().isAlive())) {
             throw new RMIException("Server has already been started and has not since stopped.");
         } else {
             try {
-                listenThread = new ListenThread(new ServerSocket(sockAddr.getPort()), server);
+                listenThread = new ListenThread(this, new ServerSocket(sockAddr.getPort()), server, myInterface);
                 listenThread.start();
             } catch (Exception e) {
                 throw new RMIException(
@@ -205,18 +204,18 @@ public class Skeleton<T> {
      */
     public synchronized void stop() {
         // set run state to false and close socket connection
-        if (listenThread != null && listenThread.thread.isAlive()) {
+        if (listenThread != null && listenThread.getThread().isAlive()) {
             listenThread.runState = false;
             try {
-                if (listenThread.serverSocket != null && !listenThread.serverSocket.isClosed()) {
-                    listenThread.serverSocket.close();
+                if (listenThread.getSocket() != null && !listenThread.getSocket().isClosed()) {
+                    listenThread.getSocket().close();
                 }
             } catch (Exception e) {
                 listen_error(e);
             }
             // waits for thread to terminate with or without exception
             try {
-                listenThread.thread.join();
+                listenThread.getThread().join();
                 stopped(null);
             } catch (Exception e) {
                 stopped(e);
@@ -231,134 +230,148 @@ public class Skeleton<T> {
     public ListenThread getListenThread(){
     	return listenThread;
     }
-    
-    public class ListenThread implements Runnable{
-    	public volatile boolean runState;//true indicates that it starts acceptting TCP requests
+
+    public class ListenThread<T> implements Runnable {
+
+       	public volatile boolean runState;//true indicates that it starts acceptting TCP requests
     	private ServerSocket serverSocket;
     	private Socket clientSockHandler;
     	private Thread thread;
     	private T server;
-    	public ListenThread(ServerSocket svSocket, T server) throws RMIException {
+    	private Class<T> myClass;
+    	private Skeleton skeleton;
+    	public ListenThread(Skeleton skeleton, ServerSocket svSocket, T server, Class<T> myClass) throws RMIException {
     		serverSocket = svSocket;
     		runState = true;
     		this.server = server;
+    		this.skeleton = skeleton;
+    		this.myClass = myClass;
     	}
     	
-		@Override
-		public synchronized void run() {
-			// TODO Auto-generated method stub
-			while(runState){
-				try{
-					clientSockHandler = serverSocket.accept();
-//					System.out.println("Skeleton accept one client connection:"+  clientSockHandler.getRemoteSocketAddress().toString() + ":" + clientSockHandler.getPort());
-					CommunicationThread serverHandler = new CommunicationThread(clientSockHandler);
-					serverHandler.start();
-				}catch(IOException e){
-//					System.out.println("***asdaexception");
-					if(runState) listen_error(e);
-				}
-			}
-		}
-		
-		public synchronized void start(){
-			if(thread == null){
-				thread = new Thread(this);
-				runState = true;
-				thread.start();
-				
-			}
-		}
+    	@Override
+    	public synchronized void run() {
+    		// TODO Auto-generated method stub
+    		while(runState){
+    			try{
+    				clientSockHandler = serverSocket.accept();
+//    				System.out.println("Skeleton accept one client connection:"+  clientSockHandler.getRemoteSocketAddress().toString() + ":" + clientSockHandler.getPort());
+    				CommunicationThread serverHandler = new CommunicationThread(skeleton, clientSockHandler, server, myClass);
+    				serverHandler.start();
+    			}catch(IOException e){
+//    				System.out.println("***asdaexception");
+    				if(runState) skeleton.listen_error(e);
+    			}
+    		}
+    	}
     	
-		public synchronized void stop() {
-			runState = false;
-			try {
-				serverSocket.close();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			try {
-				thread.join();
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-		
-		public Thread getThread(){
-			return thread;
-		}
+    	public synchronized void start(){
+    		if(thread == null){
+    			thread = new Thread(this);
+    			runState = true;
+    			thread.start();
+    			
+    		}
+    	}
+    	
+    	public synchronized void stop() {
+    		runState = false;
+    		try {
+    			serverSocket.close();
+    		} catch (IOException e) {
+    			// TODO Auto-generated catch block
+    			e.printStackTrace();
+    		}
+    		try {
+    			thread.join();
+    		} catch (InterruptedException e) {
+    			// TODO Auto-generated catch block
+    			e.printStackTrace();
+    		}
+    	}
+    	
+    	public Thread getThread(){
+    		return thread;
+    	}
 
-		
-		public synchronized boolean getRunState(){
-			if (runState) return true;
-			else return false;
-		}
-		
-		public synchronized void setRunState(boolean flag){
-			runState = flag;
-		}
+    	public ServerSocket getSocket(){
+    		return serverSocket;
+    	}
+    	
+    	public synchronized boolean getRunState(){
+    		if (runState) return true;
+    		else return false;
+    	}
+    	
+    	public synchronized void setRunState(boolean flag){
+    		runState = flag;
+    	}
+
     }
     
-    
-    public class CommunicationThread implements Runnable{
+
+    public class CommunicationThread<T> implements Runnable{
     	private Socket clientSocket;
     	private Thread thread;
-    	
-    	public CommunicationThread(Socket socketHandler){
-    		this.clientSocket = socketHandler;
+    	private T server;
+    	private Skeleton skeleton;
+    	private Class<T> myClass;
+    	public CommunicationThread(Skeleton skeleton, Socket cSocketHandler, T server, Class<T> myClass){
+    		this.clientSocket = cSocketHandler;
+    		this.server = server;
+    		this.skeleton = skeleton;
+    		this.myClass = myClass;
     	}
     	
-		@Override
-		public void run() {
-			// TODO Auto-generated method stub
-			ObjectInputStream in;
-			ObjectOutputStream out;
-			
-			try{
-				if(clientSocket != null && !clientSocket.isClosed()){
-					out = new ObjectOutputStream(clientSocket.getOutputStream());
-					out.flush();
-					in = new ObjectInputStream(clientSocket.getInputStream());            
-					
-					SerializedMethod method = (SerializedMethod) in.readObject();
-					Object retObj = null;
+    	@Override
+    	public void run() {
+    		// TODO Auto-generated method stub
+    		ObjectInputStream in;
+    		ObjectOutputStream out;
+    		
+    		try{
+    			if(clientSocket != null && !clientSocket.isClosed()){
+    				out = new ObjectOutputStream(clientSocket.getOutputStream());
+    				out.flush();
+    				in = new ObjectInputStream(clientSocket.getInputStream());            
+    				
+    				SerializedMethod method = (SerializedMethod) in.readObject();
+    				Object retObj = null;
                     try {
-                    	Method mthd = server.getClass().getMethod(method.name, method.paramTypes);
- 			           	retObj = mthd.invoke(server, method.parameters);
-					} catch (Exception e) {
-						// TODO Auto-generated catch block
-						if (e.getClass().equals(EOFException.class) || e.getClass().equals(SocketException.class)) {
-		                } else if(e.getClass().equals(InvocationTargetException.class)){
-		                	out.writeObject(e);;
-		                	return;
-		                }else{
-		                    e.printStackTrace();
-		                    service_error(new RMIException("Exception thrown in service response."));
-		                }
-					}
+                    	Method mthd = myClass.getMethod(method.name, method.paramTypes);
+    			        mthd.setAccessible(true);
+                    	retObj = mthd.invoke(server, method.parameters);
+    				} catch (Exception e) {
+    					if(e instanceof NoSuchMethodException){
+    	                	out.writeObject(e);
+    	                	e.printStackTrace();
+    	                	skeleton.service_error(new RMIException("Interface not found"));
+    	                }else if (e instanceof EOFException || e instanceof SocketException) {
+    	                } else if(e instanceof InvocationTargetException){
+    	                	out.writeObject(e);
+    	                }  else{
+    	                    e.printStackTrace();
+    	                    skeleton.service_error(new RMIException("Exception thrown in service response."));
+    	                }
+    				}
                     out.writeObject(retObj);
-					in.close();
-					out.close();
-					clientSocket.close();
-				}
-			} catch (ClassNotFoundException e){
-				service_error(new RMIException(e.getCause()));
-			} catch (SecurityException e) {
-				service_error(new RMIException(e.getCause()));
-			} catch(IOException e) {}
-			
-//			System.out.println("client thread handling"+clientSocket.getPort());
-		}
-		
-		public void start(){
-			if(thread == null){
-				thread = new Thread(this);
-				thread.start();
-			}
-		}
-	}
-
-
-
+    				in.close();
+    				out.close();
+    				clientSocket.close();
+    			}
+    		} catch (ClassNotFoundException e){
+    			skeleton.service_error(new RMIException(e.getCause()));
+    		} catch (SecurityException e) {
+    			skeleton.service_error(new RMIException(e.getCause()));
+    		} catch(IOException e) {
+    			skeleton.service_error(new RMIException(e.getCause()));
+    		}
+    	}
+    	
+    	public void start(){
+    		if(thread == null){
+    			thread = new Thread(this);
+    			thread.start();
+    		}
+    	}
+    }
 }

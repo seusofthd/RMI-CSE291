@@ -35,19 +35,25 @@ public class ClientHandler<T> implements InvocationHandler, Serializable{
 			ClientHandler handler = (ClientHandler) Proxy.getInvocationHandler(proxy);
 			return handler.address.hashCode();
 		}
-		
-		if(method.getName().equals("toString") && method.getParameterTypes().length == 0 && method.getReturnType().getName().equals("String")){
+		//method.getName().equals("toString") && method.getParameterTypes().length == 0 && method.getReturnType().getName().equals("String") &&  method.getParameterTypes()[0].toString().contains("Object")
+		if(method.toString().equals("public java.lang.String java.lang.Object.toString()")){
 			ClientHandler handler = (ClientHandler) Proxy.getInvocationHandler(proxy);
-			return "Class info:" + handler.getMyClass().toString() + " Network info:" + handler.getAddress().getHostName() + ":" + handler.getAddress().getPort();
+			
+			String res = handler.getMyClass().getName() + " " + handler.getAddress().toString();
+			System.out.println(res);
+			return res;
 		}
-		if(method.getName().equals("equals") && method.getParameterTypes().length == 1 && method.getReturnType().getName().equals("boolean")){
-			if(args.length != 1) return false;
+		
+		if(method.toString().equals("public boolean java.lang.Object.equals(java.lang.Object)")){
 			if(args[0] == null) return false;
 			ClientHandler handler1 = (ClientHandler) Proxy.getInvocationHandler(proxy);
-			ClientHandler handler2 = (ClientHandler) Proxy.getInvocationHandler(args[0]);
-			if(handler1.getClass().equals(handler2.getClass()) && (handler1.getAddress().equals(handler2.getAddress()))) return true;
-			else return false;
-			
+			try{
+				ClientHandler handler2 = (ClientHandler) Proxy.getInvocationHandler(args[0]);
+				if(handler1.getMyClass().equals(handler2.getMyClass()) && (handler1.getAddress().equals(handler2.getAddress()))) return true;
+				else return false;
+			}catch(IllegalArgumentException e){
+				return false;
+			}
 		}
 		Socket socket = null;
 		ObjectInputStream in = null;
@@ -68,6 +74,9 @@ public class ClientHandler<T> implements InvocationHandler, Serializable{
 
 		if(ret instanceof InvocationTargetException){
 			throw ((InvocationTargetException) ret).getTargetException();
+		}
+		if(ret instanceof NoSuchMethodException){
+			throw new RMIException(((NoSuchMethodException) ret).getCause());
 		}
 		try {
 			in.close();
