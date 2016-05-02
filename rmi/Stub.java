@@ -152,7 +152,7 @@ public abstract class Stub {
     }
     
     
-    private static boolean exceptionCheck(Class c){
+    public static boolean exceptionCheck(Class c){
     	for(Method method: c.getMethods()){
     		Class[] exceptions = method.getExceptionTypes();
     		boolean flag = false;

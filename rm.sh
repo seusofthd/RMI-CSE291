@@ -1,0 +1,9 @@
+docker stop rmiclient
+docker stop rmiserver
+docker rm rmiclient
+docker rm rmiserver
+docker stop data_volume
+docker rm data_volume
+docker rmi rmi/server
+docker rmi rmi/client
+docker rmi rmi/data_volume

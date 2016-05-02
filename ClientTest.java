@@ -8,7 +8,7 @@ public class ClientTest {
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		int port = Integer.parseInt(args[0]);
-		InetSocketAddress address = new InetSocketAddress("localhost", 12333);
+		InetSocketAddress address = new InetSocketAddress("server", 12333);
 		FactoryInterface factory = Stub.create(FactoryInterface.class, address);
 		try{
 			PingpongInterface ping_rmi = factory.pingpongTest(port);

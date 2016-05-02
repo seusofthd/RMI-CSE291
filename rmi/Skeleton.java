@@ -36,8 +36,8 @@ import java.util.Arrays;
 public class Skeleton<T> {
     private Class<T> myInterface = null;
     private T server = null;
-    private InetSocketAddress sockAddr;
-    private ListenThread listenThread;
+    private InetSocketAddress sockAddr = null;
+    private ListenThread listenThread = null;
 
     /**
      * Creates a <code>Skeleton</code> with no initial server address. The address will be determined by the system when
@@ -59,21 +59,13 @@ public class Skeleton<T> {
      *             If either of <code>c</code> or <code>server</code> is <code>null</code>.
      */
     public Skeleton(Class<T> c, T server) {
-        // error-checking; nullpointer and remote interface
+        //Null pointer check
         if (c == null || server == null) {
             throw new NullPointerException();
         }
-        Method[] mthds = c.getDeclaredMethods();
-        for (Method mthd : mthds) {
-            Class[] exceptions = mthd.getExceptionTypes();
-            if (!(Arrays.asList(exceptions).contains(RMIException.class)) || !(c.isInterface())) {
-                throw new Error("Class does not represent a remote interface");
-            }
-        }
-        // creates skeleton
+        if(!c.isInterface() || !Stub.exceptionCheck(c)) throw new Error("not an remote interface");
         myInterface = c;
         this.server = server;
-        sockAddr = null;
     }
 
     /**
@@ -97,18 +89,13 @@ public class Skeleton<T> {
      *             If either of <code>c</code> or <code>server</code> is <code>null</code>.
      */
     public Skeleton(Class<T> c, T server, InetSocketAddress address) {
-        // error-checking; nullpointer and remote interface
+        //Null pointer check
         if (c == null || server == null) {
             throw new NullPointerException();
         }
-        Method[] mthds = c.getDeclaredMethods();
-        for (Method mthd : mthds) {
-            Class[] exceptions = mthd.getExceptionTypes();
-            if (!(Arrays.asList(exceptions).contains(RMIException.class)) || !(c.isInterface())) {
-                throw new Error("Class does not represent a remote interface");
-            }
-        }
-        // creates skeleton
+        //Interface whether containing RMIException
+        if(!c.isInterface() || !Stub.exceptionCheck(c)) throw new Error("not an remote interface");
+        /*initialize variables*/
         myInterface = c;
         this.server = server;
         sockAddr = address;
@@ -131,9 +118,6 @@ public class Skeleton<T> {
      *            The exception that stopped the skeleton, or <code>null</code> if the skeleton stopped normally.
      */
     protected void stopped(Throwable cause) {
-        if (cause != null) {
-            cause.printStackTrace();
-        }
     }
 
     /**
@@ -182,14 +166,13 @@ public class Skeleton<T> {
         // check for conditions to throw RMIException
     	if(sockAddr == null) sockAddr = new InetSocketAddress(12345);
         if (  ((listenThread != null) && listenThread.getThread().isAlive())) {
-            throw new RMIException("Server has already been started and has not since stopped.");
+            throw new RMIException("Listening thread has been started already");
         } else {
             try {
                 listenThread = new ListenThread(this, new ServerSocket(sockAddr.getPort()), server, myInterface);
                 listenThread.start();
             } catch (Exception e) {
-                throw new RMIException(
-                        "Listening socket could not be created or bound, or listening thread could not be created.");
+                throw new RMIException("Listening socket could not be created.");
             }
         }
     }
@@ -343,13 +326,11 @@ public class Skeleton<T> {
     				} catch (Exception e) {
     					if(e instanceof NoSuchMethodException){
     	                	out.writeObject(e);
-    	                	e.printStackTrace();
     	                	skeleton.service_error(new RMIException("Interface not found"));
     	                }else if (e instanceof EOFException || e instanceof SocketException) {
     	                } else if(e instanceof InvocationTargetException){
     	                	out.writeObject(e);
     	                }  else{
-    	                    e.printStackTrace();
     	                    skeleton.service_error(new RMIException("Exception thrown in service response."));
     	                }
     				}

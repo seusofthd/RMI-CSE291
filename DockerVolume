@@ -1,0 +1,18 @@
+FROM ubuntu:14.04
+MAINTAINER DI Huang <dih024@eng.ucsd.edu>
+MAINTAINER Zhongze Hu <frankhuthu@gmail.com>
+RUN mkdir /rmi
+RUN mkdir /test
+RUN mkdir /build
+RUN mkdir /conformance
+RUN mkdir /unit
+COPY ./rmi /rmi
+COPY ./test /test
+COPY ./build /build
+COPY ./conformance /conformance
+COPY ./unit /unit
+VOLUME /rmi
+VOLUME /test
+VOLUME /build
+VOLUME /conformance
+VOLUME /unit

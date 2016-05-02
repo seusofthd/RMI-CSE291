@@ -19,7 +19,7 @@ public class FactoryImpl implements FactoryInterface, Serializable {
 		Skeleton<PingpongInterface> skeleton = new Skeleton(PingpongInterface.class, pingpong, address);
 		skeleton.start();
 		skeletons.put(port, skeleton);
-		PingpongInterface pingpong_remote = Stub.create(PingpongInterface.class, skeleton, "localhost");
+		PingpongInterface pingpong_remote = Stub.create(PingpongInterface.class, skeleton, "server");
 		return pingpong_remote;
 	}
 
