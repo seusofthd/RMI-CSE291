@@ -56,7 +56,6 @@ public abstract class Stub {
         if (c == null || skeleton == null) {
             throw new NullPointerException("One or more arguments are null");
         }
-        // || !((skeleton.getListenThread() != null) && (skeleton.getListenThread().getThread().isAlive()))
         if (skeleton.getSockAddr() == null) {
             throw new IllegalStateException("Skeleton has not been assigned an address and has not yet been started");
         }

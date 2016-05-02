@@ -31,11 +31,11 @@ public class ClientHandler<T> implements InvocationHandler, Serializable{
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 		// TODO Auto-generated method stub
 		//before remote invokation, we should deal with the several method invocation cases like: hashcode, toString and equals
-		if(method.getName().equals("hashCode") && method.getParameterTypes().length == 0){
+		if(method.toString().equals("public native int java.lang.Object.hashCode()")){
 			ClientHandler handler = (ClientHandler) Proxy.getInvocationHandler(proxy);
 			return handler.address.hashCode();
 		}
-		//method.getName().equals("toString") && method.getParameterTypes().length == 0 && method.getReturnType().getName().equals("String") &&  method.getParameterTypes()[0].toString().contains("Object")
+
 		if(method.toString().equals("public java.lang.String java.lang.Object.toString()")){
 			ClientHandler handler = (ClientHandler) Proxy.getInvocationHandler(proxy);
 			

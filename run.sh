@@ -1,6 +1,7 @@
-# docker-machine start default
-# docker-machine env default
-# eval '$(docker-machine env default)'
+docker-machine stop default
+docker-machine start default
+docker-machine env default
+eval "$(docker-machine env default)"
 
 docker build -t myubuntu -f Dockerfile .
 docker build -t rmi/data_volume -f DockerVolume .
